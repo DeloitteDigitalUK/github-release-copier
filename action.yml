@@ -1,0 +1,41 @@
+name: 'API specification retriever'
+description: 'Fetch API specifications from GitHub'
+inputs:
+  source-api-key:
+    description: 'GitHub API key for source repository'
+    required: true
+  source-owner:
+    description: 'Source repository owner (e.g. org)'
+    required: true
+  source-repo:
+    description: 'Source repository name'
+    required: true
+  dest-api-key:
+    description: 'GitHub API key for destination repository'
+    required: true
+  dest-owner:
+    description: 'Destination repository owner (e.g. org)'
+    required: true
+  dest-repo:
+    description: 'Destination repository name'
+    required: true
+  temp-dir:
+    description: 'Temporary directory to store release asset files'
+    required: true
+    default: './files'
+  release-name:
+    description: 'Name of the release to copy'
+    required: true
+outputs: {}
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    SOURCE_API_KEY: "${{ inputs.source-api-key }}"
+    SOURCE_OWNER: "${{ inputs.source-owner }}"
+    SOURCE_REPO: "${{ inputs.source-repo }}"
+    DEST_API_KEY: "${{ inputs.dest-api-key }}"
+    DEST_OWNER: "${{ inputs.dest-owner }}"
+    DEST_REPO: "${{ inputs.dest-repo }}"
+    TEMP_DIR: "${{ inputs.temp-dir }}"
+  args: [ "${{ inputs.release-name }}" ]

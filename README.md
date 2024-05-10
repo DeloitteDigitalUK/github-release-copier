@@ -36,6 +36,29 @@ This will:
 2. For each search result, query GitHub's API for file metadata, such as the download URL
 3. Make a `GET` request to the download URL and save the contents of the file to a directory named `specs`
 
+## Using this tool
+
+### Copying a release as a GitHub Action
+
+This tool can be consumed as a GitHub Action, in your own GitHub Actions workflows.
+
+For example:
+
+```yaml
+steps:
+  - name: Copy release from one repo to another
+    uses: DeloitteDigitalUK/github-release-copier@HEAD
+    with:
+      source-api-key: "${{ secrets.SOURCE_API_KEY }}"
+      source-owner: "octocat"
+      source-repo: "octorepo"
+      dest-api-key: "${{ secrets.DEST_API_KEY }}"
+      dest-owner: "anothercat"
+      dest-repo: "anotherrepo"
+      temp-dir: "./files"
+      release-name: "v1.0.0"
+```
+
 #### Token permissions
 
 The tool requires content read-only permissions for the repository it is querying and content read-write permissions for the repository in which it is creating the release.
