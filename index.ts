@@ -141,7 +141,7 @@ const uploadAssets = async (
 
 const copyRelease = async () => {
     let releaseTag: string;
-    if (process.argv.length === 2) {
+    if (process.argv.length === 3) {
         releaseTag = process.argv[2];
     } else {
         throw new Error(`Must specify a release name`);

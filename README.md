@@ -1,6 +1,6 @@
 # GitHub Release Copier
 
-Copies a release, it's name, body and assets from one GitHub owner/repository to another.
+Copies a release (including its name, body and assets) from one GitHub owner/repository to another.
 
 ## How does it work?
 
