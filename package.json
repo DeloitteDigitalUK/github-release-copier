@@ -1,0 +1,23 @@
+{
+  "name": "github-release-copier",
+  "version": "0.1.0",
+  "description": "Copies a GitHub release from one owner/repo to another.",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "debug": "npm run build && node --env-file=.env --inspect-brk ./dist/index.js",
+    "start": "npm run build && node --env-file=.env ./dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@types/node-fetch": "^2.6.11",
+    "typescript": "^5.3.3"
+  }
+}
