@@ -23,9 +23,16 @@ inputs:
     description: 'Temporary directory to store release asset files'
     required: true
     default: './files'
+  body-replace-regex:
+    description: 'Regular expression to replace in release body'
+    required: false
+  body-replace-with:
+    description: 'Replacement string for regular expression'
+    required: false
   release-name:
     description: 'Name of the release to copy'
     required: true
+    default: ''
 outputs: {}
 runs:
   using: 'docker'
@@ -38,4 +45,6 @@ runs:
     DEST_OWNER: "${{ inputs.dest-owner }}"
     DEST_REPO: "${{ inputs.dest-repo }}"
     TEMP_DIR: "${{ inputs.temp-dir }}"
+    BODY_REPLACE_REGEX: "${{ inputs.body-replace-regex }}"
+    BODY_REPLACE_WITH: "${{ inputs.body-replace-with }}"
   args: [ "${{ inputs.release-name }}" ]

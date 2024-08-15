@@ -12,8 +12,9 @@ const {
     DEST_API_KEY,
     DEST_OWNER,
     DEST_REPO,
-    RELEASE_TAG,
     TEMP_DIR,
+    BODY_REPLACE_REGEX,
+    BODY_REPLACE_WITH,
 } = process.env;
 
 type Release = {
@@ -161,6 +162,10 @@ const copyRelease = async () => {
         releaseTag,
         tempDir,
     );
+
+    if (BODY_REPLACE_REGEX?.length) {
+        release.body = release.body.replace(new RegExp(BODY_REPLACE_REGEX, 'g'), BODY_REPLACE_WITH ?? "");
+    }
 
     const destOwner = DEST_OWNER!;
     const destRepo = DEST_REPO!;
