@@ -56,6 +56,8 @@ steps:
       dest-owner: "anothercat"
       dest-repo: "anotherrepo"
       temp-dir: "./files"
+      body-replace-regex: "octocat"
+      body-replace-with: "octodog"
       release-name: "v1.0.0"
 ```
 
