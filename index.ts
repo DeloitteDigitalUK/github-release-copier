@@ -13,6 +13,7 @@ const {
     DEST_OWNER,
     DEST_REPO,
     TEMP_DIR,
+    INCLUDE_ASSETS,
     BODY_REPLACE_REGEX,
     BODY_REPLACE_WITH,
 } = process.env;
@@ -62,6 +63,7 @@ async function downloadAsset(
 
 const downloadAssets = async (
     apiKey: string,
+    includeAssets: string[],
     owner: string,
     repo: string,
     tag: string,
@@ -87,6 +89,9 @@ const downloadAssets = async (
     console.log(`Release has ${assets.data.length} assets`);
 
     for (const asset of assets.data) {
+        if (!includeAssets.includes(asset)) {
+            continue
+        }
         const assetResponse = await fetchAssetDetails(connection, owner, repo, asset.id);
         const fileName = assetResponse.name;
 
@@ -153,10 +158,13 @@ const copyRelease = async () => {
         fs.mkdirSync(tempDir);
     }
 
+    const includeAssets: string[] = INCLUDE_ASSETS.split(" ");
+
     const sourceOwner = SOURCE_OWNER!;
     const sourceRepo = SOURCE_REPO!;
     const release = await downloadAssets(
         SOURCE_API_KEY!,
+        includeAssets,
         sourceOwner,
         sourceRepo,
         releaseTag,

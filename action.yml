@@ -33,6 +33,9 @@ inputs:
     description: 'Name of the release to copy'
     required: true
     default: ''
+  include-assets:
+    description: 'List of assets to copy'
+    required: true
 outputs: {}
 runs:
   using: 'docker'
@@ -45,6 +48,7 @@ runs:
     DEST_OWNER: "${{ inputs.dest-owner }}"
     DEST_REPO: "${{ inputs.dest-repo }}"
     TEMP_DIR: "${{ inputs.temp-dir }}"
+    INCLUDE_ASSETS: "${{ inputs.include-assets}}"
     BODY_REPLACE_REGEX: "${{ inputs.body-replace-regex }}"
     BODY_REPLACE_WITH: "${{ inputs.body-replace-with }}"
   args: [ "${{ inputs.release-name }}" ]
