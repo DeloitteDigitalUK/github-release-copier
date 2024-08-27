@@ -63,7 +63,7 @@ async function downloadAsset(
 
 const downloadAssets = async (
     apiKey: string,
-    includeAssets: string[],
+    includeAssets: string[] | undefined,
     owner: string,
     repo: string,
     tag: string,
@@ -89,12 +89,12 @@ const downloadAssets = async (
     console.log(`Release has ${assets.data.length} assets`);
 
     for (const asset of assets.data) {
-        if (!includeAssets.includes(asset)) {
-            continue
-        }
         const assetResponse = await fetchAssetDetails(connection, owner, repo, asset.id);
         const fileName = assetResponse.name;
-
+        if (includeAssets && !includeAssets.some((ia) => assetResponse.name.match(new RegExp(ia)))) {
+            console.log(`${fileName} did not match RegEx`);
+            continue
+        }
         console.log(`Downloading asset: ${fileName}...`);
         const assetStream = await downloadAsset(connection, owner, repo, asset.id);
 
@@ -158,7 +158,7 @@ const copyRelease = async () => {
         fs.mkdirSync(tempDir);
     }
 
-    const includeAssets: string[] = INCLUDE_ASSETS.split(" ");
+    const includeAssets: string[] = INCLUDE_ASSETS.split(",");
 
     const sourceOwner = SOURCE_OWNER!;
     const sourceRepo = SOURCE_REPO!;

@@ -36,6 +36,7 @@ inputs:
   include-assets:
     description: 'List of assets to copy'
     required: true
+    default: '.*'
 outputs: {}
 runs:
   using: 'docker'
