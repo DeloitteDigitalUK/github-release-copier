@@ -160,7 +160,7 @@ const copyRelease = async () => {
         fs.mkdirSync(tempDir);
     }
 
-    const includeAssets = INCLUDE_ASSETS?.split(",");
+    const includeAssets = INCLUDE_ASSETS?.split(/\s+/)?.filter((filter) => filter.length > 0);
     const sourceOwner = SOURCE_OWNER!;
     const sourceRepo = SOURCE_REPO!;
 
