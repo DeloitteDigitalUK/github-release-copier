@@ -49,16 +49,21 @@ steps:
   - name: Copy release from one repo to another
     uses: DeloitteDigitalUK/github-release-copier@HEAD
     with:
+      release-name: "v1.0.0"
       source-api-key: "${{ secrets.SOURCE_API_KEY }}"
       source-owner: "octocat"
       source-repo: "octorepo"
       dest-api-key: "${{ secrets.DEST_API_KEY }}"
       dest-owner: "anothercat"
       dest-repo: "anotherrepo"
+      
+      # optional
       temp-dir: "./files"
       body-replace-regex: "octocat"
       body-replace-with: "octodog"
-      release-name: "v1.0.0"
+      include-assets: |
+        *.example.zip
+        *.docs.zip
 ```
 
 #### Token permissions
