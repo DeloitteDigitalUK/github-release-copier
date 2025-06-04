@@ -4,7 +4,7 @@ import {createWriteStream} from "node:fs";
 import path from "node:path";
 import {pipeline} from "node:stream/promises";
 import * as fs from "fs";
-import { process } from "node:process";
+import process = require("node:process");
 
 const {
     SOURCE_API_KEY,
