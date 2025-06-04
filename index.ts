@@ -19,7 +19,7 @@ const {
     BODY_REPLACE_WITH,
 } = process.env;
 
-type Release = {
+export type Release = {
     body: string,
     assets: string[],
 }
@@ -32,7 +32,7 @@ type Release = {
  * @param assetId - ID of the asset.
  * @returns Asset details.
  */
-async function fetchAssetDetails(
+export async function fetchAssetDetails(
     connection: Octokit,
     owner: string,
     repo: string,
@@ -54,7 +54,7 @@ async function fetchAssetDetails(
  * @param assetId - ID of the asset.
  * @returns A readable stream of the asset data.
  */
-async function downloadAsset(
+export async function downloadAsset(
     connection: Octokit,
     owner: string,
     repo: string,
@@ -88,7 +88,7 @@ async function downloadAsset(
  * @param outputDir - Directory to save downloaded assets.
  * @returns An object containing the release body and a list of downloaded asset names.
  */
-const downloadAssets = async (
+export const downloadAssets = async (
     apiKey: string,
     assetFilter: string[] | undefined,
     owner: string,
@@ -146,7 +146,7 @@ const downloadAssets = async (
  * @param inputDir - Directory containing the assets to upload.
  * @param release - Release object containing the body and asset names.
  */
-const uploadAssets = async (
+export const uploadAssets = async (
     apiKey: string,
     owner: string,
     repo: string,
@@ -183,7 +183,7 @@ const uploadAssets = async (
     }
 };
 
-const copyRelease = async () => {
+export const copyRelease = async () => {
     let releaseTag: string;
     if (process.argv.length === 3) {
         releaseTag = process.argv[2];
@@ -228,7 +228,8 @@ const copyRelease = async () => {
     console.log(`Completed copying release ${releaseTag} from ${sourceOwner}/${sourceRepo} to ${destOwner}/${destRepo}`);
 };
 
-copyRelease().then(() => {
+if (require.main === module) {
+    copyRelease().then(() => {
         console.log("Action completed successfully.");
         process.exit(0);
     }).catch(error => {
@@ -244,3 +245,4 @@ copyRelease().then(() => {
         }
         process.exit(1);
     });
+}

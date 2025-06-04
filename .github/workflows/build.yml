@@ -25,7 +25,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npm test || echo "No tests to run"
+        run: npm test
 
   docker-build:
     runs-on: ubuntu-latest

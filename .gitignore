@@ -5,3 +5,4 @@ dist/
 .env
 .tool-versions
 files/
+/coverage/
