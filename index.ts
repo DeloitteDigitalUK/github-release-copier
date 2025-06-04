@@ -4,6 +4,7 @@ import {createWriteStream} from "node:fs";
 import path from "node:path";
 import {pipeline} from "node:stream/promises";
 import * as fs from "fs";
+import { process } from "node:process";
 
 const {
     SOURCE_API_KEY,
@@ -23,6 +24,14 @@ type Release = {
     assets: string[],
 }
 
+/**
+ * Fetches details for a specific release asset.
+ * @param connection - Octokit instance.
+ * @param owner - Repository owner.
+ * @param repo - Repository name.
+ * @param assetId - ID of the asset.
+ * @returns Asset details.
+ */
 async function fetchAssetDetails(
     connection: Octokit,
     owner: string,
@@ -37,6 +46,14 @@ async function fetchAssetDetails(
     return assetResponse.data;
 }
 
+/**
+ * Downloads a specific release asset.
+ * @param connection - Octokit instance.
+ * @param owner - Repository owner.
+ * @param repo - Repository name.
+ * @param assetId - ID of the asset.
+ * @returns A readable stream of the asset data.
+ */
 async function downloadAsset(
     connection: Octokit,
     owner: string,
@@ -61,6 +78,16 @@ async function downloadAsset(
     }
 }
 
+/**
+ * Downloads assets from a GitHub release.
+ * @param apiKey - GitHub API key.
+ * @param assetFilter - Array of regex strings to filter assets by name. Undefined means include all.
+ * @param owner - Source repository owner.
+ * @param repo - Source repository name.
+ * @param tag - Release tag.
+ * @param outputDir - Directory to save downloaded assets.
+ * @returns An object containing the release body and a list of downloaded asset names.
+ */
 const downloadAssets = async (
     apiKey: string,
     assetFilter: string[] | undefined,
@@ -110,6 +137,15 @@ const downloadAssets = async (
     };
 }
 
+/**
+ * Creates a new release and uploads assets to it.
+ * @param apiKey - GitHub API key for the destination repository.
+ * @param owner - Destination repository owner.
+ * @param repo - Destination repository name.
+ * @param tag - Tag for the new release.
+ * @param inputDir - Directory containing the assets to upload.
+ * @param release - Release object containing the body and asset names.
+ */
 const uploadAssets = async (
     apiKey: string,
     owner: string,
@@ -192,4 +228,19 @@ const copyRelease = async () => {
     console.log(`Completed copying release ${releaseTag} from ${sourceOwner}/${sourceRepo} to ${destOwner}/${destRepo}`);
 };
 
-copyRelease().catch(console.error);
+copyRelease().then(() => {
+        console.log("Action completed successfully.");
+        process.exit(0);
+    }).catch(error => {
+        console.error("Action failed:", error.message || error);
+        if (error.stack) {
+            console.error(error.stack);
+        }
+        if (error.status) {
+            console.error(`Octokit request failed with status ${error.status}`);
+        }
+        if (error.response && error.response.data) {
+            console.error("Response data:", error.response.data);
+        }
+        process.exit(1);
+    });
