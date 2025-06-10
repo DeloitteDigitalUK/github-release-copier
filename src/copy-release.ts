@@ -1,6 +1,5 @@
 import * as fs from "fs";
-import { downloadAssets } from "./download-service";
-import { uploadAssets } from "./upload-service";
+import {downloadAssets, uploadAssets} from "./assets";
 
 /**
  * Configuration for the copyRelease function

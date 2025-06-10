@@ -6,8 +6,7 @@ jest.mock('fs', () => ({
   existsSync: jest.fn(),
   mkdirSync: jest.fn()
 }));
-jest.mock('../download-service');
-jest.mock('../upload-service');
+jest.mock('../assets');
 
 // Save the original process
 const originalProcess = { ...process };
@@ -16,8 +15,7 @@ const originalEnv = { ...process.env };
 
 // Import the function after mocking dependencies
 import { copyRelease, CopyReleaseConfig } from '../copy-release';
-import { downloadAssets } from '../download-service';
-import { uploadAssets } from '../upload-service';
+import {downloadAssets, uploadAssets} from '../assets';
 
 describe('Copy Release Function', () => {
   // Test configuration object

@@ -1,14 +1,12 @@
 import * as fs from "fs";
 import process = require("node:process");
-import { downloadAssets, Release } from "./download-service";
-import { uploadAssets } from "./upload-service";
+import {downloadAssets, Release, uploadAssets} from "./assets";
 import { copyRelease, CopyReleaseConfig } from "./copy-release";
 
 // Export all the functions for backward compatibility
-export type { Release } from "./download-service";
+export type { Release } from "./assets";
 export { fetchAssetDetails, downloadAsset } from "./github-asset";
-export { downloadAssets } from "./download-service";
-export { uploadAssets } from "./upload-service";
+export { downloadAssets } from "./assets";
 export { copyRelease, CopyReleaseConfig } from "./copy-release";
 
 if (require.main === module) {
@@ -53,3 +51,4 @@ if (require.main === module) {
         process.exit(1);
     });
 }
+export {uploadAssets} from "./assets";
