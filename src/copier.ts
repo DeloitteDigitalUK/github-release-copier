@@ -81,4 +81,3 @@ function processBody(body: string, regex?: string, replacement?: string): string
         return body; // Return original on error
     }
 }
-

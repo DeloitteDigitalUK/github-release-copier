@@ -14,7 +14,7 @@ const originalArgv = [...process.argv];
 const originalEnv = { ...process.env };
 
 // Import the function after mocking dependencies
-import { copyRelease, CopyReleaseConfig } from '../copy-release';
+import { copyRelease, CopyReleaseConfig } from '../copier';
 import {downloadAssets, uploadAssets} from '../assets';
 
 describe('Copy Release Function', () => {

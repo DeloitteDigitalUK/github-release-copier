@@ -1,13 +1,5 @@
-import * as fs from "fs";
 import process = require("node:process");
-import {downloadAssets, Release, uploadAssets} from "./assets";
-import { copyRelease, CopyReleaseConfig } from "./copy-release";
-
-// Export all the functions for backward compatibility
-export type { Release } from "./assets";
-export { fetchAssetDetails, downloadAsset } from "./github-asset";
-export { downloadAssets } from "./assets";
-export { copyRelease, CopyReleaseConfig } from "./copy-release";
+import { copyRelease, CopyReleaseConfig } from "./copier";
 
 if (require.main === module) {
     if (process.argv.length < 3) {
@@ -17,7 +9,6 @@ if (require.main === module) {
 
     const releaseTag = process.argv[2];
 
-    // Create config object from environment variables
     const config: CopyReleaseConfig = {
         sourceApiKey: process.env.SOURCE_API_KEY!,
         sourceOwner: process.env.SOURCE_OWNER!,
@@ -33,7 +24,6 @@ if (require.main === module) {
         bodyReplaceWith: process.env.BODY_REPLACE_WITH,
     };
 
-    // Call copyRelease with the config object
     copyRelease(config).then(() => {
         console.log("Action completed successfully.");
         process.exit(0);
@@ -51,4 +41,3 @@ if (require.main === module) {
         process.exit(1);
     });
 }
-export {uploadAssets} from "./assets";
