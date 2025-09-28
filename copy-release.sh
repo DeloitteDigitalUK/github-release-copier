@@ -8,6 +8,7 @@ set -e
 
 # Default values
 COPY_ALL_RELEASES=false
+SORT_BY_SEMVER=true
 RELEASE_TAG=""
 SOURCE_OWNER=""
 SOURCE_REPO=""
@@ -35,6 +36,7 @@ OPTIONS:
     -i, --include-assets PATTERN Include assets matching pattern (space-separated)
     -r, --replace-regex REGEX   Regex pattern to replace in release body
     -w, --replace-with TEXT     Replacement text for regex pattern
+    --sort-by-date              Sort releases by creation date instead of semantic version
 
 REQUIRED ENVIRONMENT VARIABLES:
     SOURCE_API_KEY              GitHub API token for source repository
@@ -48,8 +50,11 @@ EXAMPLES:
     # Copy a specific release
     $0 -S "owner1/repo1" -D "owner2/repo2" -t "./temp" v1.0.0
 
-    # Copy all releases
+    # Copy all releases (sorted by semantic version by default)
     $0 --all -S "owner1/repo1" -D "owner2/repo2" -t "./temp"
+
+    # Copy all releases sorted by creation date instead
+    $0 --all --sort-by-date -S "owner1/repo1" -D "owner2/repo2" -t "./temp"
 
     # Copy with asset filtering and body replacement
     $0 -S "owner1/repo1" -D "owner2/repo2" -t "./temp" \\
@@ -58,7 +63,8 @@ EXAMPLES:
 ENVIRONMENT VARIABLES:
     REQUIRED: SOURCE_API_KEY, DEST_API_KEY
     OPTIONAL: SOURCE_OWNER, SOURCE_REPO, DEST_OWNER, DEST_REPO,
-              TEMP_DIR, INCLUDE_ASSETS, BODY_REPLACE_REGEX, BODY_REPLACE_WITH, COPY_ALL_RELEASES
+              TEMP_DIR, INCLUDE_ASSETS, BODY_REPLACE_REGEX, BODY_REPLACE_WITH,
+              COPY_ALL_RELEASES, SORT_BY_SEMVER
 
 EOF
 }
@@ -109,6 +115,10 @@ while [[ $# -gt 0 ]]; do
         -w|--replace-with)
             BODY_REPLACE_WITH="$2"
             shift 2
+            ;;
+        --sort-by-date)
+            SORT_BY_SEMVER=false
+            shift
             ;;
         -*)
             echo "Error: Unknown option $1"
@@ -176,6 +186,7 @@ export DEST_OWNER
 export DEST_REPO
 export TEMP_DIR
 export COPY_ALL_RELEASES
+export SORT_BY_SEMVER
 [[ -n "$INCLUDE_ASSETS" ]] && export INCLUDE_ASSETS
 [[ -n "$BODY_REPLACE_REGEX" ]] && export BODY_REPLACE_REGEX
 [[ -n "$BODY_REPLACE_WITH" ]] && export BODY_REPLACE_WITH
