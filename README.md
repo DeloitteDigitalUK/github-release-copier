@@ -112,6 +112,24 @@ For example:
 node ./dist/index.js v1.0.0
 ```
 
+#### Using the shell script
+
+A shell script is provided that allows you to pass arguments via command line instead of environment variables:
+
+```shell
+# Set required API keys as environment variables
+export SOURCE_API_KEY="ghp_source_token"
+export DEST_API_KEY="ghp_dest_token"
+
+# Copy a specific release
+./copy-release.sh -S "owner1/repo1" -D "owner2/repo2" -t "./temp" v1.0.0
+
+# Copy all releases
+./copy-release.sh --all -S "owner1/repo1" -D "owner2/repo2" -t "./temp"
+```
+
+Run `./copy-release.sh --help` for full usage information.
+
 #### Running with Docker
 
 Build the container:
