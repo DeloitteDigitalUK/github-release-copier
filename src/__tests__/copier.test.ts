@@ -7,6 +7,7 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn()
 }));
 jest.mock('../assets');
+jest.mock('@octokit/rest');
 
 // Save the original process
 const originalProcess = { ...process };
@@ -16,6 +17,7 @@ const originalEnv = { ...process.env };
 // Import the function after mocking dependencies
 import { copyRelease, CopyReleaseConfig } from '../copier';
 import {downloadAssets, uploadAssets} from '../assets';
+import { Octokit } from '@octokit/rest';
 
 describe('Copy Release Function', () => {
   // Test configuration object
@@ -126,6 +128,152 @@ describe('Copy Release Function', () => {
       expect.any(String),
       mockRelease
     );
+  });
+
+  describe('copyAllReleases functionality', () => {
+    const mockOctokit = {
+      repos: {
+        listReleases: jest.fn() as jest.MockedFunction<any>,
+        getReleaseByTag: jest.fn() as jest.MockedFunction<any>
+      }
+    };
+
+    beforeEach(() => {
+      jest.mocked(Octokit).mockImplementation(() => mockOctokit as any);
+      mockOctokit.repos.listReleases.mockClear();
+      mockOctokit.repos.getReleaseByTag.mockClear();
+    });
+
+    it('should validate that both copyAllReleases and releaseTag cannot be specified', async () => {
+      const invalidConfig = {
+        ...mockConfig,
+        copyAllReleases: true,
+        releaseTag: 'v1.0.0'
+      };
+
+      await expect(copyRelease(invalidConfig)).rejects.toThrow(
+        'Cannot specify both copyAllReleases and releaseTag. Choose one or the other.'
+      );
+    });
+
+    it('should validate that either copyAllReleases or releaseTag must be specified', async () => {
+      const invalidConfig = {
+        ...mockConfig,
+        copyAllReleases: false,
+        releaseTag: undefined
+      };
+
+      await expect(copyRelease(invalidConfig)).rejects.toThrow(
+        'Must specify either copyAllReleases or releaseTag.'
+      );
+    });
+
+    it('should copy all releases from oldest to newest, skipping existing ones', async () => {
+      // Mock source releases (ordered by creation date)
+      mockOctokit.repos.listReleases.mockResolvedValue({
+        data: [
+          { tag_name: 'v2.0.0', created_at: '2023-02-01T00:00:00Z' },
+          { tag_name: 'v1.0.0', created_at: '2023-01-01T00:00:00Z' },
+          { tag_name: 'v3.0.0', created_at: '2023-03-01T00:00:00Z' }
+        ]
+      });
+
+      // Mock destination checks: v1.0.0 exists, others don't
+      mockOctokit.repos.getReleaseByTag
+        .mockResolvedValueOnce({ data: { tag_name: 'v1.0.0' } }) // v1.0.0 exists
+        .mockRejectedValueOnce({ status: 404 }) // v2.0.0 doesn't exist
+        .mockRejectedValueOnce({ status: 404 }); // v3.0.0 doesn't exist
+
+      // Mock download/upload for each release that will be copied
+      jest.mocked(downloadAssets)
+        .mockResolvedValueOnce({
+          body: 'Release notes for v2.0.0',
+          assets: ['asset2.zip']
+        })
+        .mockResolvedValueOnce({
+          body: 'Release notes for v3.0.0',
+          assets: ['asset3.zip']
+        });
+
+      const configWithCopyAll = {
+        ...mockConfig,
+        copyAllReleases: true,
+        releaseTag: undefined
+      };
+
+      await copyRelease(configWithCopyAll);
+
+      // Verify releases were fetched
+      expect(mockOctokit.repos.listReleases).toHaveBeenCalledWith({
+        owner: mockConfig.sourceOwner,
+        repo: mockConfig.sourceRepo,
+        per_page: 100
+      });
+
+      // Verify existence checks were made for all releases in order (oldest first)
+      expect(mockOctokit.repos.getReleaseByTag).toHaveBeenCalledTimes(3);
+      expect(mockOctokit.repos.getReleaseByTag).toHaveBeenNthCalledWith(1, {
+        owner: mockConfig.destOwner,
+        repo: mockConfig.destRepo,
+        tag: 'v1.0.0'
+      });
+      expect(mockOctokit.repos.getReleaseByTag).toHaveBeenNthCalledWith(2, {
+        owner: mockConfig.destOwner,
+        repo: mockConfig.destRepo,
+        tag: 'v2.0.0'
+      });
+      expect(mockOctokit.repos.getReleaseByTag).toHaveBeenNthCalledWith(3, {
+        owner: mockConfig.destOwner,
+        repo: mockConfig.destRepo,
+        tag: 'v3.0.0'
+      });
+
+      // Verify only non-existing releases were downloaded and uploaded
+      expect(downloadAssets).toHaveBeenCalledTimes(2);
+      expect(uploadAssets).toHaveBeenCalledTimes(2);
+
+      // Verify v2.0.0 was processed
+      expect(downloadAssets).toHaveBeenNthCalledWith(1,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'v2.0.0',
+        mockConfig.tempDir
+      );
+
+      // Verify v3.0.0 was processed
+      expect(downloadAssets).toHaveBeenNthCalledWith(2,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'v3.0.0',
+        mockConfig.tempDir
+      );
+    });
+
+    it('should handle errors when checking if release exists', async () => {
+      mockOctokit.repos.listReleases.mockResolvedValue({
+        data: [
+          { tag_name: 'v1.0.0', created_at: '2023-01-01T00:00:00Z' }
+        ]
+      });
+
+      // Mock a non-404 error (e.g., API rate limit)
+      mockOctokit.repos.getReleaseByTag.mockRejectedValue({ status: 429, message: 'Rate limit exceeded' });
+
+      const configWithCopyAll = {
+        ...mockConfig,
+        copyAllReleases: true,
+        releaseTag: undefined
+      };
+
+      await expect(copyRelease(configWithCopyAll)).rejects.toMatchObject({
+        status: 429,
+        message: 'Rate limit exceeded'
+      });
+    });
   });
 });
 
