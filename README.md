@@ -30,6 +30,12 @@ For example:
 npm start v1.0.0
 ```
 
+To copy all releases from oldest to newest (skipping any that already exist at the destination):
+
+```shell
+COPY_ALL_RELEASES=true npm start
+```
+
 This will:
 
 1. Call the GitHub search API using the query defined in `.env`
@@ -46,7 +52,7 @@ For example:
 
 ```yaml
 steps:
-  - name: Copy release from one repo to another
+  - name: Copy specific release from one repo to another
     uses: DeloitteDigitalUK/github-release-copier@HEAD
     with:
       release-name: "v1.0.0"
@@ -61,9 +67,10 @@ steps:
       temp-dir: "./files"
       body-replace-regex: "octocat"
       body-replace-with: "octodog"
+      # include-assets uses regex patterns (one per line)
       include-assets: |
-        *.example.zip
-        *.docs.zip
+        .*\.example\.zip$
+        .*\.docs\.zip$
 ```
 
 #### Token permissions
