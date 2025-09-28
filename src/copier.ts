@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import { Octokit } from "@octokit/rest";
+import * as semver from "semver";
 import {downloadAssets, uploadAssets} from "./assets";
 
 /**
@@ -15,6 +16,7 @@ export interface CopyReleaseConfig {
     tempDir: string;
     releaseTag?: string;
     copyAllReleases?: boolean;
+    sortBySemver?: boolean;
     includeAssets?: string[];
     bodyReplaceRegex?: string;
     bodyReplaceWith?: string;
@@ -25,26 +27,75 @@ export interface CopyReleaseConfig {
  * @param apiKey GitHub API key
  * @param owner Repository owner
  * @param repo Repository name
+ * @param sortBySemver Whether to sort by semantic version (default: true) or by creation date
  * @returns Array of release tags sorted from oldest to newest
  */
-async function listAllReleases(apiKey: string, owner: string, repo: string): Promise<string[]> {
+async function listAllReleases(apiKey: string, owner: string, repo: string, sortBySemver: boolean = true): Promise<string[]> {
     const connection = new Octokit({
         auth: apiKey,
         request: fetch,
     });
 
-    const releases = await connection.repos.listReleases({
+    // Fetch ALL releases using pagination
+    const allReleases = await connection.paginate(connection.repos.listReleases, {
         owner,
         repo,
         per_page: 100, // GitHub's max per page
     });
 
-    // Sort by created date (oldest first)
-    const sortedReleases = releases.data.sort((a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
+    console.log(`DEBUG: Fetched ${allReleases.length} total releases from ${owner}/${repo}`);
 
-    return sortedReleases.map(release => release.tag_name);
+    if (sortBySemver) {
+        // Sort by semantic version (oldest first)
+        const validVersions: Array<{tag: string, version: semver.SemVer, originalData: any}> = [];
+        const invalidVersions: Array<{tag: string, originalData: any}> = [];
+
+        for (const release of allReleases) {
+            const version = semver.valid(semver.coerce(release.tag_name));
+            if (version) {
+                validVersions.push({
+                    tag: release.tag_name,
+                    version: new semver.SemVer(version),
+                    originalData: release
+                });
+            } else {
+                invalidVersions.push({
+                    tag: release.tag_name,
+                    originalData: release
+                });
+            }
+        }
+
+        // Sort valid semantic versions
+        validVersions.sort((a, b) => semver.compare(a.version, b.version));
+
+        // Sort invalid versions by creation date
+        invalidVersions.sort((a, b) =>
+            new Date(a.originalData.created_at).getTime() - new Date(b.originalData.created_at).getTime()
+        );
+
+        const sortedTags = [
+            ...validVersions.map(v => v.tag),
+            ...invalidVersions.map(v => v.tag)
+        ];
+
+        // Debug output
+        console.log(`DEBUG: Found ${validVersions.length} valid semver releases and ${invalidVersions.length} invalid ones`);
+        console.log(`DEBUG: First 10 sorted releases: ${sortedTags.slice(0, 10).join(', ')}`);
+        if (validVersions.length > 0) {
+            console.log(`DEBUG: First semver release: ${validVersions[0].tag} (${validVersions[0].version.version})`);
+            console.log(`DEBUG: Last semver release: ${validVersions[validVersions.length - 1].tag} (${validVersions[validVersions.length - 1].version.version})`);
+        }
+
+        return sortedTags;
+    } else {
+        // Sort by created date (oldest first)
+        const sortedReleases = allReleases.sort((a: any, b: any) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+
+        return sortedReleases.map((release: any) => release.tag_name);
+    }
 }
 
 /**
@@ -137,8 +188,9 @@ export const copyRelease = async (config: CopyReleaseConfig) => {
     if (config.copyAllReleases) {
         // Copy all releases mode
         console.log(`Fetching all releases from ${config.sourceOwner}/${config.sourceRepo}...`);
-        const allReleases = await listAllReleases(config.sourceApiKey, config.sourceOwner, config.sourceRepo);
-        console.log(`Found ${allReleases.length} releases to process`);
+        const sortBySemver = config.sortBySemver !== false; // Default to true
+        const allReleases = await listAllReleases(config.sourceApiKey, config.sourceOwner, config.sourceRepo, sortBySemver);
+        console.log(`Found ${allReleases.length} releases to process${sortBySemver ? ' (sorted by semantic version)' : ' (sorted by creation date)'}`);
 
         for (const releaseTag of allReleases) {
             console.log(`Processing release: ${releaseTag}`);

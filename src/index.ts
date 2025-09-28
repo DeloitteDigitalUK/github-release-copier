@@ -25,6 +25,7 @@ if (require.main === module) {
         tempDir: process.env.TEMP_DIR!,
         releaseTag: copyAllReleases ? undefined : releaseTag,
         copyAllReleases: copyAllReleases,
+        sortBySemver: process.env.SORT_BY_SEMVER !== 'false', // Default to true unless explicitly set to false
         // Parse include assets pattern if provided
         includeAssets: process.env.INCLUDE_ASSETS?.split(/\s+/)?.filter((filter) => filter.length > 0),
         bodyReplaceRegex: process.env.BODY_REPLACE_REGEX,

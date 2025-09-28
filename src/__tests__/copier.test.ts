@@ -10,7 +10,6 @@ jest.mock('../assets');
 jest.mock('@octokit/rest');
 
 // Save the original process
-const originalProcess = { ...process };
 const originalArgv = [...process.argv];
 const originalEnv = { ...process.env };
 
@@ -273,6 +272,136 @@ describe('Copy Release Function', () => {
         status: 429,
         message: 'Rate limit exceeded'
       });
+    });
+
+    it('should sort releases by semantic version by default', async () => {
+      // Mock source releases with semver tags in random order
+      mockOctokit.repos.listReleases.mockResolvedValue({
+        data: [
+          { tag_name: 'v1.10.0', created_at: '2023-02-01T00:00:00Z' },
+          { tag_name: 'v1.0.0', created_at: '2023-01-01T00:00:00Z' },
+          { tag_name: 'v2.0.0', created_at: '2023-03-01T00:00:00Z' }
+        ]
+      });
+
+      // Mock all releases don't exist at destination
+      mockOctokit.repos.getReleaseByTag.mockRejectedValue({ status: 404 });
+
+      // Mock download/upload for each release
+      jest.mocked(downloadAssets)
+        .mockResolvedValueOnce({
+          body: 'Release notes for v1.0.0',
+          assets: ['asset1.zip']
+        })
+        .mockResolvedValueOnce({
+          body: 'Release notes for v1.10.0',
+          assets: ['asset2.zip']
+        })
+        .mockResolvedValueOnce({
+          body: 'Release notes for v2.0.0',
+          assets: ['asset3.zip']
+        });
+
+      const configWithCopyAll = {
+        ...mockConfig,
+        copyAllReleases: true,
+        releaseTag: undefined,
+        sortBySemver: true
+      };
+
+      await copyRelease(configWithCopyAll);
+
+      // Verify releases were processed in semantic version order (1.0.0, 1.10.0, 2.0.0)
+      expect(downloadAssets).toHaveBeenCalledTimes(3);
+      expect(downloadAssets).toHaveBeenNthCalledWith(1,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'v1.0.0',
+        mockConfig.tempDir
+      );
+      expect(downloadAssets).toHaveBeenNthCalledWith(2,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'v1.10.0',
+        mockConfig.tempDir
+      );
+      expect(downloadAssets).toHaveBeenNthCalledWith(3,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'v2.0.0',
+        mockConfig.tempDir
+      );
+    });
+
+    it('should sort releases by creation date when sortBySemver is false', async () => {
+      // Mock source releases in reverse chronological order
+      mockOctokit.repos.listReleases.mockResolvedValue({
+        data: [
+          { tag_name: 'release-c', created_at: '2023-03-01T00:00:00Z' },
+          { tag_name: 'release-a', created_at: '2023-01-01T00:00:00Z' },
+          { tag_name: 'release-b', created_at: '2023-02-01T00:00:00Z' }
+        ]
+      });
+
+      // Mock all releases don't exist at destination
+      mockOctokit.repos.getReleaseByTag.mockRejectedValue({ status: 404 });
+
+      // Mock download/upload for each release
+      jest.mocked(downloadAssets)
+        .mockResolvedValueOnce({
+          body: 'Release notes for release-a',
+          assets: ['asset1.zip']
+        })
+        .mockResolvedValueOnce({
+          body: 'Release notes for release-b',
+          assets: ['asset2.zip']
+        })
+        .mockResolvedValueOnce({
+          body: 'Release notes for release-c',
+          assets: ['asset3.zip']
+        });
+
+      const configWithDateSort = {
+        ...mockConfig,
+        copyAllReleases: true,
+        releaseTag: undefined,
+        sortBySemver: false
+      };
+
+      await copyRelease(configWithDateSort);
+
+      // Verify releases were processed in creation date order (oldest first)
+      expect(downloadAssets).toHaveBeenCalledTimes(3);
+      expect(downloadAssets).toHaveBeenNthCalledWith(1,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'release-a',
+        mockConfig.tempDir
+      );
+      expect(downloadAssets).toHaveBeenNthCalledWith(2,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'release-b',
+        mockConfig.tempDir
+      );
+      expect(downloadAssets).toHaveBeenNthCalledWith(3,
+        mockConfig.sourceApiKey,
+        mockConfig.includeAssets,
+        mockConfig.sourceOwner,
+        mockConfig.sourceRepo,
+        'release-c',
+        mockConfig.tempDir
+      );
     });
   });
 });
