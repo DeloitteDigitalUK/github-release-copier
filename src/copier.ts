@@ -221,8 +221,13 @@ export const copyRelease = async (config: CopyReleaseConfig) => {
  * @returns The processed body text
  */
 function processBody(body: string, regex?: string, replacement?: string): string {
-    if (!regex || !replacement) {
-        return body; // Return original if no replacement configured
+    if (!regex) {
+        return body; // Return original if no regex configured
+    }
+
+    if (!replacement) {
+        // effectively remove matched text if replacement is not provided
+        replacement = '';
     }
 
     try {

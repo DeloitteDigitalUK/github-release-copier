@@ -99,6 +99,33 @@ describe('Copy Release Function', () => {
     expect(fs.mkdirSync).not.toHaveBeenCalled();
   });
 
+  it('should remove matched text when bodyReplaceWith is not provided', async () => {
+    const configWithoutReplacement: CopyReleaseConfig = {
+      ...mockConfig,
+      bodyReplaceRegex: 'replace-this',
+      bodyReplaceWith: undefined,
+    };
+
+    jest.mocked(downloadAssets).mockResolvedValue({
+      body: 'Before replace-this after',
+      assets: ['asset1.zip']
+    });
+
+    await copyRelease(configWithoutReplacement);
+
+    expect(uploadAssets).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      {
+        body: 'Before  after',
+        assets: ['asset1.zip']
+      }
+    );
+  });
+
   it('should handle case when no regex replacement is needed', async () => {
     // Create config without regex replacement
     const configWithoutRegex = {
