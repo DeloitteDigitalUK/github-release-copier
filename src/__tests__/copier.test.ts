@@ -161,13 +161,20 @@ describe('Copy Release Function', () => {
       repos: {
         listReleases: jest.fn() as jest.MockedFunction<any>,
         getReleaseByTag: jest.fn() as jest.MockedFunction<any>
-      }
+      },
+      paginate: jest.fn() as jest.MockedFunction<any>
     };
 
     beforeEach(() => {
       jest.mocked(Octokit).mockImplementation(() => mockOctokit as any);
       mockOctokit.repos.listReleases.mockClear();
       mockOctokit.repos.getReleaseByTag.mockClear();
+      mockOctokit.paginate.mockClear();
+      // Simulate Octokit's paginate: call the endpoint fn and return its data array
+      mockOctokit.paginate.mockImplementation(async (fn: any, params: any) => {
+        const result = await fn(params);
+        return result.data;
+      });
     });
 
     it('should validate that both copyAllReleases and releaseTag cannot be specified', async () => {
